@@ -1,0 +1,187 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace Bingy
+{
+
+    class Program
+    {
+
+        static void Main(string[] args)
+        {
+        
+            // Author : Suchith Kumar K V
+            // Classifier Program
+            // Written in C# and .NET 4.0 and above
+        
+          // File read for training and test data
+            string[] lines = System.IO.File.ReadAllLines(@"C:\Documents\BING\BingHackathonTrainingData.txt");
+            string[] lines2 = System.IO.File.ReadAllLines(@"C:\Documents\BING\BingHackathonTestData.txt");
+          // Variables declaration
+            int count = 0, ID = 3;
+            int tot_0, tot_1, tot_2, tp = 0, tot_rec = 0;
+
+            Double prob_topic0, prob_topic1, prob_topic2;
+            Double auth_topic0, auth_topic1, auth_topic2;
+
+            Double result;
+            List<Double> prob0 = new List<double>();
+            List<Double> prob1 = new List<double>();
+            List<Double> prob2 = new List<double>();
+            Dictionary<string, List<int>> Authors = new Dictionary<string, List<int>>();
+            Dictionary<string, List<Double>> Prob_Auth_Topic = new Dictionary<string, List<double>>();
+            Dictionary<int, int> Prediction = new Dictionary<int, int>();
+            List<Double> p = new List<Double>();
+
+            string[] split;
+            string[] authors;
+            string[] split1;
+            string[] authors1;
+            int rec_ID;
+
+            string val = null;
+
+            System.Console.WriteLine("Contents of WriteLines2.txt = ");
+
+            tot_0 = tot_1 = tot_2 = 0;
+
+
+            foreach (string line in lines)
+            {
+                split = line.Split(new Char[] { '\t' });
+                authors = split[3].Split(new Char[] { ';' });
+
+                tp = Convert.ToInt32(split[1]);
+
+                if (tp == 0)
+                    tot_0 += 1;
+                else if (tp == 1)
+                    tot_1 += 1;
+                else if (tp == 2)
+                    tot_2 += 1;
+
+
+
+                foreach (string s in authors)
+                {
+
+                    if (s.Trim() != "")
+                    {
+                        //Console.WriteLine(s);
+
+                        if (Authors.ContainsKey(s))
+                        {
+                            Authors[s][tp] += 1;
+
+
+                        }
+                        else
+                        {
+
+                            if (tp == 0)
+                            {
+                                Authors.Add(s, new List<int>() { 1, 0, 0 });
+
+                            }
+                            else if (tp == 1)
+                            {
+                                Authors.Add(s, new List<int>() { 0, 1, 0 });
+
+                            }
+                            else if (tp == 2)
+                            {
+                                Authors.Add(s, new List<int>() { 0, 0, 1 });
+
+                            }
+                        }
+                    }
+
+                }
+
+                tot_rec += 1;
+            }
+
+            prob_topic0 = (Double)tot_0 / tot_rec;
+            prob_topic1 = (Double)tot_1 / tot_rec;
+            prob_topic2 = (Double)tot_2 / tot_rec;
+
+            foreach (KeyValuePair<string, List<int>> entry in Authors)
+            {
+                auth_topic0 = (Double)(entry.Value[0]) / (tot_0);
+                auth_topic1 = (Double)(entry.Value[1]) / (tot_1);
+                auth_topic2 = (Double)(entry.Value[2]) / (tot_2);
+
+                Prob_Auth_Topic.Add(entry.Key.ToString(), new List<Double>() { auth_topic0, auth_topic1, auth_topic2 });
+
+
+            }
+
+            foreach (string line in lines2)
+            {
+                split1 = line.Split(new Char[] { '\t' });
+                authors1 = split1[3].Split(new Char[] { ';' });
+                rec_ID = Convert.ToInt32(split1[0]);
+
+                foreach (string s in authors1)
+                {
+                    if (Prob_Auth_Topic.ContainsKey(s))
+                    {
+                        p = Prob_Auth_Topic[s];
+                        prob0.Add(p[0] * prob_topic0);
+                        prob1.Add(p[1] * prob_topic1);
+                        prob2.Add(p[2] * prob_topic2);
+                    }
+                }
+
+                auth_topic0 = (Double)prob0.Sum() * prob_topic0;
+                auth_topic1 = (Double)prob1.Sum() * prob_topic1;
+                auth_topic2 = (Double)prob2.Sum() * prob_topic2;
+
+                prob0.Clear();
+                prob1.Clear();
+                prob2.Clear();
+
+
+                result = Math.Max(auth_topic0, Math.Max(auth_topic1, auth_topic2));
+
+                if (result == auth_topic0)
+                {
+                    ID = 0;
+                }
+                else if (result == auth_topic1)
+                {
+                    ID = 1;
+                }
+                else if (result == auth_topic2)
+                {
+                    ID = 2;
+                }
+                Prediction.Add(rec_ID, ID);
+                val = val + rec_ID + "\t" + ID + "\r\n";
+
+            }
+
+            string path = @"C:\Documents\BING\test.txt";
+            if (!File.Exists(path))
+            {
+                File.Create(path).Close();
+            }
+            using (StreamWriter w = File.AppendText(path))
+            {
+                w.WriteLine("record_id\ttopic");
+                w.WriteLine(val);
+                w.Flush();
+                w.Close();
+            }
+
+            
+
+            
+
+            
+        }
+    }
+}
