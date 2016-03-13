@@ -1,26 +1,20 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+using System.IO;
 
 namespace Bingy
 {
-
     class Program
     {
-
         static void Main(string[] args)
         {
-        
-            // Author : Suchith Kumar K V
-            // Classifier Program
-            // Written in C# and .NET 4.0 and above
-        
-          // File read for training and test data
-            string[] lines = System.IO.File.ReadAllLines(@"C:\Documents\BING\BingHackathonTrainingData.txt");
-            string[] lines2 = System.IO.File.ReadAllLines(@"C:\Documents\BING\BingHackathonTestData.txt");
-          // Variables declaration
+
+            string[] lines = System.IO.File.ReadAllLines(@"C:Microsoft\BingHackathonTrainingData.txt");
+            string[] lines2 = System.IO.File.ReadAllLines(@"C:Microsoft\BingHackathonTestData.txt");
+
             int count = 0, ID = 3;
             int tot_0, tot_1, tot_2, tp = 0, tot_rec = 0;
 
@@ -51,8 +45,13 @@ namespace Bingy
 
             foreach (string line in lines)
             {
+                // Use a tab to indent each line of the file.
+
+                //string[] split = line.Split(new Char[] { ' ', ',', '.', ':', '\t' });
                 split = line.Split(new Char[] { '\t' });
                 authors = split[3].Split(new Char[] { ';' });
+
+                //Console.WriteLine("topic: " + split[1]+"\npublication: "+split[2]+"\n");
 
                 tp = Convert.ToInt32(split[1]);
 
@@ -102,6 +101,13 @@ namespace Bingy
                 }
 
                 tot_rec += 1;
+
+
+
+                //// Console.WriteLine("\t" + line);
+                //count++;
+                //if (count == 100)
+                //    break;
             }
 
             prob_topic0 = (Double)tot_0 / tot_rec;
@@ -110,9 +116,9 @@ namespace Bingy
 
             foreach (KeyValuePair<string, List<int>> entry in Authors)
             {
-                auth_topic0 = (Double)(entry.Value[0]) / (tot_0);
-                auth_topic1 = (Double)(entry.Value[1]) / (tot_1);
-                auth_topic2 = (Double)(entry.Value[2]) / (tot_2);
+                auth_topic0 = (Double)(entry.Value[0]) / (tot_0 + tot_1 + tot_2);
+                auth_topic1 = (Double)(entry.Value[1]) / (tot_1 + tot_0 + tot_2);
+                auth_topic2 = (Double)(entry.Value[2]) / (tot_2 + tot_1 + tot_0);
 
                 Prob_Auth_Topic.Add(entry.Key.ToString(), new List<Double>() { auth_topic0, auth_topic1, auth_topic2 });
 
@@ -130,15 +136,22 @@ namespace Bingy
                     if (Prob_Auth_Topic.ContainsKey(s))
                     {
                         p = Prob_Auth_Topic[s];
-                        prob0.Add(p[0] * prob_topic0);
-                        prob1.Add(p[1] * prob_topic1);
-                        prob2.Add(p[2] * prob_topic2);
+                        if(p[0]!=0.0)
+                            prob0.Add((p[0] * prob_topic0)/(prob_topic0+prob_topic1+prob_topic2));
+                        if (p[1] != 0.0)
+                            prob1.Add((p[1] * prob_topic1)/(prob_topic0+prob_topic1+prob_topic2));
+                        if (p[2] != 0.0)
+                            prob2.Add((p[2] * prob_topic2) / (prob_topic0 + prob_topic1 + prob_topic2));
                     }
                 }
+
+
 
                 auth_topic0 = (Double)prob0.Sum() * prob_topic0;
                 auth_topic1 = (Double)prob1.Sum() * prob_topic1;
                 auth_topic2 = (Double)prob2.Sum() * prob_topic2;
+
+                
 
                 prob0.Clear();
                 prob1.Clear();
@@ -164,7 +177,9 @@ namespace Bingy
 
             }
 
-            string path = @"C:\Documents\BING\test.txt";
+            Console.WriteLine("Probailities of topics(0,1,2): " + prob_topic0 + " " + prob_topic1 + " " + prob_topic2);
+
+            string path = @"C:Microsoft\test.txt";
             if (!File.Exists(path))
             {
                 File.Create(path).Close();
@@ -176,10 +191,6 @@ namespace Bingy
                 w.Flush();
                 w.Close();
             }
-
-            
-
-            
 
             
         }
